@@ -41,9 +41,20 @@ class HodLeave(Resource):
             result.append(dict)
         return result
 
+class apply_Leave(Resource):
+    def get(self,slno,from1,to,nod,reason,caddr,type1):
+        print(slno)
+        caddr = caddr.replace("*","/")
+        caddr = caddr.replace("'","\"")
+        conn = e.connect()
+        values = "('%s','%s','%s','%s','%s','%s','%s')" %(slno,type1,nod,from1,to,reason,caddr)
+        query = conn.execute("insert into apply values"+values)
+
+
 
 api.add_resource(Faculty_details,'/Faculty')
 api.add_resource(HodLeave,'/HOD_Leave')
+api.add_resource(apply_Leave,'/applied/<string:slno>/<string:type1>/<string:nod>/<string:from1>/<string:to>/<string:reason>/<string:caddr>')
 
 if __name__ == '__main__':
      app.run()
