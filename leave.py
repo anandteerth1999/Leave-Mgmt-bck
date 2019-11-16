@@ -15,7 +15,7 @@ CORS(app)
 
 class Faculty_details(Resource):
     def get(self):
-        result.clear
+        result.clear()
         conn = e.connect()
         query = conn.execute('select slno,Name,fid,Designation,Phno,Email,Sex from Teaching')
         for i in query.cursor.fetchall():
@@ -30,8 +30,22 @@ class Faculty_details(Resource):
             result.append(dict)
         return result
 
+
+class HodLeave(Resource):
+    def get(self):
+        result.clear()
+        conn = e.connect()
+        query = conn.execute('select name from Teaching')
+        for i in query.cursor.fetchall():
+            dict = {'Name': i[0]}
+            result.append(dict)
+        return result
+
+
 api.add_resource(Faculty_details,'/Faculty')
+api.add_resource(HodLeave,'/HOD_Leave')
 
 if __name__ == '__main__':
      app.run()
-   
+
+
