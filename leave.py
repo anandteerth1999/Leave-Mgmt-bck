@@ -42,7 +42,7 @@ class HodLeave(Resource):
         return result
 
 class apply_Leave(Resource):
-    def get(self,slno,from1,to,nod,reason,caddr,type1):
+    def get(self,slno,nod,from1,to,reason,caddr,type1):
         print(slno)
         caddr = caddr.replace("*","/")
         caddr = caddr.replace("'","\"")
