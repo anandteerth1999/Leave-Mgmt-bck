@@ -62,13 +62,30 @@ class regs_Details(Resource):
         values = "('%d','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %(int(slno),Name,Fid,Desig,Ph,email,doj,pan,aadh,dob,addr,sal,sex)
         query = conn.execute("insert into Teaching values"+values)
 
+class Leave_Details(Resource):
+    def get(self):
+        j=0
+        result.clear()
+        conn = e.connect()
+        query = conn.execute("select apply.slno,apply.lid,count(apply.lid),sum(apply.no_of_days),leave.no_of_days from leave,apply WHERE apply.lid=leave.lid group by(apply.lid)")
+        for i in query.cursor.fetchall():
+            llid = int(i[4])-int(i[3])
+            dict = {
+                'slno':i[0],
+                'lid':i[1],
+                'nod_applied':i[3],
+                'nod_remaining':llid
+            }
+            result.append(dict)
+            j = j+1
+        return result
 
 
 api.add_resource(Faculty_details,'/Faculty')
 api.add_resource(HodLeave,'/HOD_Leave')
 api.add_resource(apply_Leave,'/applied/<string:email>/<string:type1>/<string:from1>/<string:to>/<string:reason>/<string:caddr>')
 api.add_resource(regs_Details,'/regs/<string:Name>/<string:Fid>/<string:Desig>/<string:Ph>/<string:email>/<string:doj>/<string:aadh>/<string:pan>/<string:dob>/<string:addr>/<string:sal>/<string:sex>')
-
+api.add_resource(Leave_Details,'/leaved')
 
 if __name__ == '__main__':
      app.run()
