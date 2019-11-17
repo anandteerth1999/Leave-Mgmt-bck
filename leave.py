@@ -1,6 +1,6 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, null
 from flask_cors import CORS
 from json import dumps,dump
 
@@ -42,13 +42,13 @@ class HodLeave(Resource):
         return result
 
 class apply_Leave(Resource):
-    def get(self,email,type1,nod,from1,to,reason,caddr):
+    def get(self,email,type1,from1,to,reason,caddr):
         caddr = caddr.replace("*","/")
         caddr = caddr.replace("'","\"")
         conn = e.connect()
         cquery = conn.execute("select slno from Teaching where Teaching.email = email")
         slno = cquery.cursor.fetchall()[0][0]
-        values = "('%d','%s','%s','%s','%s','%s','%s')" %(int(slno),type1,nod,from1,to,reason,caddr)
+        values = "('%d','%s','%s','%s','%s','%s','%s')" %(int(slno),type1,null,from1,to,reason,caddr)
         query = conn.execute("insert into apply values"+values)
 
 class regs_Details(Resource):
@@ -66,7 +66,7 @@ class regs_Details(Resource):
 
 api.add_resource(Faculty_details,'/Faculty')
 api.add_resource(HodLeave,'/HOD_Leave')
-api.add_resource(apply_Leave,'/applied/<string:email>/<string:type1>/<string:nod>/<string:from1>/<string:to>/<string:reason>/<string:caddr>')
+api.add_resource(apply_Leave,'/applied/<string:email>/<string:type1>/<string:from1>/<string:to>/<string:reason>/<string:caddr>')
 api.add_resource(regs_Details,'/regs/<string:Name>/<string:Fid>/<string:Desig>/<string:Ph>/<string:email>/<string:doj>/<string:aadh>/<string:pan>/<string:dob>/<string:addr>/<string:sal>/<string:sex>')
 
 
