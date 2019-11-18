@@ -12,6 +12,7 @@ app = Flask(__name__)
 api = Api(app)
 result = []
 CORS(app)
+row_id = 0
 
 class Faculty_details(Resource):
     def get(self):
@@ -43,13 +44,18 @@ class HodLeave(Resource):
 
 class apply_Leave(Resource):
     def get(self,email,type1,from1,to,reason,caddr):
+
         caddr = caddr.replace("*","/")
         caddr = caddr.replace("'","\"")
         conn = e.connect()
         cquery = conn.execute("select slno from Teaching where Teaching.email = email")
         slno = cquery.cursor.fetchall()[0][0]
-        values = "('%d','%s','%s','%s','%s','%s','%s')" %(int(slno),type1,null,from1,to,reason,caddr)
+
+        values = "('%d','%s','%s','%s','%s','%s','%s','%d')" %(int(slno),type1,null,from1,to,reason,caddr, row_id)
+        row_id
         query = conn.execute("insert into apply values"+values)
+
+
 
 class regs_Details(Resource):
     def get(self,Name,Fid,Desig,Ph,email,doj,aadh,pan,dob,addr,sal,sex):
@@ -81,11 +87,23 @@ class Leave_Details(Resource):
         return result
 
 
+class Alternate(Resource):
+    def get(self):
+        result.clear()
+        conn = e.connect()
+        query =  conn.execute("select no_of_days from apply where row_id = max(row_id) ")
+        dict = {'no_of_days':query.cursor.fetchall()[0][0]}
+        result.append(dict)
+        return result
+
+
+
 api.add_resource(Faculty_details,'/Faculty')
 api.add_resource(HodLeave,'/HOD_Leave')
 api.add_resource(apply_Leave,'/applied/<string:email>/<string:type1>/<string:from1>/<string:to>/<string:reason>/<string:caddr>')
 api.add_resource(regs_Details,'/regs/<string:Name>/<string:Fid>/<string:Desig>/<string:Ph>/<string:email>/<string:doj>/<string:aadh>/<string:pan>/<string:dob>/<string:addr>/<string:sal>/<string:sex>')
 api.add_resource(Leave_Details,'/leaved')
+api.add_resource(Alternate,'/alternate')
 
 if __name__ == '__main__':
      app.run()
