@@ -43,18 +43,29 @@ class HodLeave(Resource):
         return result
 
 class apply_Leave(Resource):
+    row_id = 3
     def get(self,email,type1,from1,to,reason,caddr):
 
         caddr = caddr.replace("*","/")
         caddr = caddr.replace("'","\"")
         conn = e.connect()
+        query4 = conn.execute("select row_counter from counters")
+        row = query4.cursor.fetchall()[0][0]
         cquery = conn.execute("select slno from Teaching where Teaching.email = email")
         slno = cquery.cursor.fetchall()[0][0]
-
-        values = "('%d','%s','%s','%s','%s','%s','%s','%d')" %(int(slno),type1,null,from1,to,reason,caddr, row_id)
-        row_id
-        query = conn.execute("insert into apply values"+values)
-
+        query3 = conn.execute("select lid from leave where leave.lid ='"+str(type1)+"'")
+        tiff = str(query3.cursor.fetchall()[0][0])
+        values = "('%d','%s','%s','%s','%s','%s','%s','%d')" %(int(slno),type1,null,from1,to,reason,caddr,int(row))
+        query1 = conn.execute("select CAST((julianday('"+to+"')-julianday('"+from1+"')) as INTEGER)")
+        diffd = query1.cursor.fetchall()[0][0]
+        query2 = conn.execute("select Remaining_leaves.remaining_days from Remaining_Leaves,Teaching where Teaching.slno = Remaining_leaves.slno and Teaching.email = email and remaining_leaves.lid='"+tiff+"'")
+        rem = query2.cursor.fetchall()[0][0]
+        #diff = int(rem) - int(diffd)
+        if(int(diffd)<=int(rem)):
+            query = conn.execute("insert into apply values"+values)
+            return True
+        else:
+            return False
 
 
 class regs_Details(Resource):
@@ -87,14 +98,15 @@ class Leave_Details(Resource):
         return result
 
 
+
 class Alternate(Resource):
-    def get(self):
+    def get(self,email):
         result.clear()
         conn = e.connect()
-        query =  conn.execute("select no_of_days from apply where row_id = max(row_id) ")
-        dict = {'no_of_days':query.cursor.fetchall()[0][0]}
-        result.append(dict)
-        return result
+        query =  conn.execute("select no_of_days from apply where row_id = (select max(row_id) from apply where slno = (select slno from Teaching where Teaching.email = email)) ")
+        a = query.cursor.fetchall()[0][0]
+        a = int(a)
+        return a
 
 
 
