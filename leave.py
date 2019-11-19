@@ -80,21 +80,20 @@ class regs_Details(Resource):
         query = conn.execute("insert into Teaching values"+values)
 
 class Leave_Details(Resource):
-    def get(self):
-        j=0
+    def get(self,email):
         result.clear()
         conn = e.connect()
-        query = conn.execute("select apply.slno,apply.lid,count(apply.lid),sum(apply.no_of_days),leave.no_of_days from leave,apply WHERE apply.lid=leave.lid group by(apply.lid)")
+        query1 = conn.execute("select slno from Teaching where Teaching.email = email")
+        slno = query1.cursor.fetchall()[0][0]
+        query = conn.execute("select * from remaining_leaves where remaining_leaves.slno = "+str(slno))
         for i in query.cursor.fetchall():
-            llid = int(i[4])-int(i[3])
             dict = {
                 'slno':i[0],
                 'lid':i[1],
-                'nod_applied':i[3],
-                'nod_remaining':llid
+                'nod_applied':i[2],
+                'nod_remaining':i[3]
             }
             result.append(dict)
-            j = j+1
         return result
 
 
@@ -120,14 +119,23 @@ class Handel(Resource):
             result.append(dict)
         return result
 
+class arrange(Resource):
+    def get(self,email,date1,class1,section,time,sub,handel):
+        conn = e.connect()
+        query1 = conn.execute("select slno from Teaching where Teaching.email = email")
+        slno = query1.cursor.fetchall()[0][0]
+        values = "(%d,'%s','%s','%s','%s','%s',%d)" %(int(slno),date1,class1,section,time,sub,int(handel))
+        query = conn.execute("insert into alt_agmt values"+values)
+
 
 api.add_resource(Faculty_details,'/Faculty')
 api.add_resource(HodLeave,'/HOD_Leave')
 api.add_resource(apply_Leave,'/applied/<string:email>/<string:type1>/<string:from1>/<string:to>/<string:reason>/<string:caddr>')
 api.add_resource(regs_Details,'/regs/<string:Name>/<string:Fid>/<string:Desig>/<string:Ph>/<string:email>/<string:doj>/<string:aadh>/<string:pan>/<string:dob>/<string:addr>/<string:sal>/<string:sex>')
-api.add_resource(Leave_Details,'/leaved')
-api.add_resource(Alternate,'/alternate')
+api.add_resource(Leave_Details,'/leaved/<string:email>')
+api.add_resource(Alternate,'/alternate/<string:email>')
 api.add_resource(Handel,'/handle')
+api.add_resource(arrange,'/altinsert/<string:email>/<string:date1>/<string:class1>/<string:section>/<string:time>/<string:sub>/<string:handel>')
 
 if __name__ == '__main__':
      app.run()
