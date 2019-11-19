@@ -108,6 +108,17 @@ class Alternate(Resource):
         a = int(a)
         return a
 
+class Handel(Resource):
+    def get(self):
+        result.clear()
+        conn = e.connect()
+        query = conn.execute("select Name,slno from Teaching")
+        for i in query.cursor.fetchall():
+            dict = {'Name':i[0],
+                    'slno':i[1]
+                    }
+            result.append(dict)
+        return result
 
 
 api.add_resource(Faculty_details,'/Faculty')
@@ -116,6 +127,7 @@ api.add_resource(apply_Leave,'/applied/<string:email>/<string:type1>/<string:fro
 api.add_resource(regs_Details,'/regs/<string:Name>/<string:Fid>/<string:Desig>/<string:Ph>/<string:email>/<string:doj>/<string:aadh>/<string:pan>/<string:dob>/<string:addr>/<string:sal>/<string:sex>')
 api.add_resource(Leave_Details,'/leaved')
 api.add_resource(Alternate,'/alternate')
+api.add_resource(Handel,'/handle')
 
 if __name__ == '__main__':
      app.run()
