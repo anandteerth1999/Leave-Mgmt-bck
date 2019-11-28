@@ -127,6 +127,26 @@ class arrange(Resource):
         values = "(%d,'%s','%s','%s','%s','%s',%d)" %(int(slno),date1,class1,section,time,sub,int(handel))
         query = conn.execute("insert into alt_agmt values"+values)
 
+class dateAdd(Resource):
+    def get(self,email):
+        result.clear()
+        conn = e.connect()
+        query =  conn.execute("select no_of_days from apply where row_id = (select max(row_id) from apply where slno = (select slno from Teaching where Teaching.email = email)) ")
+        a = query.cursor.fetchall()[0][0]
+        query =  conn.execute("select from_date from apply where row_id = (select max(row_id) from apply where slno = (select slno from Teaching where Teaching.email = email)) ")
+        from1 = query.cursor.fetchall()[0][0]
+        result.append(from1)
+        a = int(a)
+        b = 1
+        while(True):
+            if(b==a):
+                break
+            query1 = conn.execute("SELECT date('"+from1+"','"+str(b)+" day')")
+            inc = query1.cursor.fetchall()[0][0]
+            result.append(inc)
+            b = b+1            
+        return result
+
 
 api.add_resource(Faculty_details,'/Faculty')
 api.add_resource(HodLeave,'/HOD_Leave')
@@ -136,6 +156,7 @@ api.add_resource(Leave_Details,'/leaved/<string:email>')
 api.add_resource(Alternate,'/alternate/<string:email>')
 api.add_resource(Handel,'/handle')
 api.add_resource(arrange,'/altinsert/<string:email>/<string:date1>/<string:class1>/<string:section>/<string:time>/<string:sub>/<string:handel>')
+api.add_resource(dateAdd,'/dateadd/<string:email>')
 
 if __name__ == '__main__':
      app.run()
