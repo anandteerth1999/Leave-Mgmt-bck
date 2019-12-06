@@ -147,6 +147,22 @@ class dateAdd(Resource):
             b = b+1            
         return result
 
+class Mgmtlv(Resource):
+    def get(self,Name):
+        result.clear()
+        conn = e.connect()
+        query1 = conn.execute("select slno from Teaching where Teaching.Name = Name")
+        slno = query1.cursor.fetchall()[0][0]
+        query = conn.execute("select * from remaining_leaves where remaining_leaves.slno = "+str(slno))
+        for i in query.cursor.fetchall():
+            dict = {
+                'slno':i[0],
+                'lid':i[1],
+                'nod_applied':i[2],
+                'nod_remaining':i[3]
+            }
+            result.append(dict)
+        return result
 
 api.add_resource(Faculty_details,'/Faculty')
 api.add_resource(HodLeave,'/HOD_Leave')
@@ -157,6 +173,7 @@ api.add_resource(Alternate,'/alternate/<string:email>')
 api.add_resource(Handel,'/handle')
 api.add_resource(arrange,'/altinsert/<string:email>/<string:date1>/<string:class1>/<string:section>/<string:time>/<string:sub>/<string:handel>')
 api.add_resource(dateAdd,'/dateadd/<string:email>')
+api.add_resource(Mgmtlv,'/hodmgt/<string:Name>')
 
 if __name__ == '__main__':
      app.run()
