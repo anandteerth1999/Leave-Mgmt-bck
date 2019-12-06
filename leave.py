@@ -164,6 +164,25 @@ class Mgmtlv(Resource):
             result.append(dict)
         return result
 
+class Sub_Details(Resource):
+    def get(self,lid,email):
+        result.clear()
+        conn = e.connect()
+        query1 = conn.execute("select slno from Teaching where Teaching.email = email")
+        slno = query1.cursor.fetchall()[0][0]
+        query = conn.execute("select from_date,to_date,no_of_days,reason from apply where apply.lid = '"+str(lid)+"' and apply.slno = "+str(slno)+" order by(from_date)")
+        for i in query.cursor.fetchall():
+            dict = {
+                'from1':i[0],
+                'to1':i[1],
+                'nod':i[2],
+                'reason':i[3]
+            }
+            result.append(dict)
+        return result
+
+
+
 api.add_resource(Faculty_details,'/Faculty')
 api.add_resource(HodLeave,'/HOD_Leave')
 api.add_resource(apply_Leave,'/applied/<string:email>/<string:type1>/<string:from1>/<string:to>/<string:reason>/<string:caddr>')
@@ -174,6 +193,7 @@ api.add_resource(Handel,'/handle')
 api.add_resource(arrange,'/altinsert/<string:email>/<string:date1>/<string:class1>/<string:section>/<string:time>/<string:sub>/<string:handel>')
 api.add_resource(dateAdd,'/dateadd/<string:email>')
 api.add_resource(Mgmtlv,'/hodmgt/<string:Name>')
+api.add_resource(Sub_Details,'/lvsubd/<string:lid>/<string:email>')
 
 if __name__ == '__main__':
      app.run()
