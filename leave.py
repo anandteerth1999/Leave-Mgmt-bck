@@ -3,6 +3,11 @@ from flask_restful import Resource, Api
 from sqlalchemy import create_engine, null
 from flask_cors import CORS
 from json import dumps,dump
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+# Python code to illustrate Sending mail from  
+# your Gmail account  
+import smtplib
 
 
 
@@ -121,11 +126,47 @@ class Handel(Resource):
 
 class arrange(Resource):
     def get(self,email,date1,class1,section,time,sub,handel):
+        # emails = []
+        # emails.append(email)
         conn = e.connect()
-        query1 = conn.execute("select slno from Teaching where Teaching.email = email")
-        slno = query1.cursor.fetchall()[0][0]
+        query1 = conn.execute("select slno,name from Teaching where Teaching.email = email")
+        row = query1.cursor.fetchall()[0]
+        slno,name = row[0],row[1]
         values = "(%d,'%s','%s','%s','%s','%s',%d)" %(int(slno),date1,class1,section,time,sub,int(handel))
         query = conn.execute("insert into alt_agmt values"+values)
+        query = conn.execute("select email from Teaching where Teaching.slno ="+handel)
+        altemail = query.cursor.fetchall()[0][0]
+        
+        msg = MIMEMultipart()
+        msg['From'] = "BITCSE.1979@gmail.com"
+        msg['To'] = altemail
+        msg['Subject'] = "You have been assigned an Alternate Arrangement"
+        message = """You have been assigned an Alternate Arrangement
+        From:%s
+        Date:%s
+        Class:%s
+        Section:%s
+        Time:%s
+        Sub:%s""" %(name,date1,class1,section,time,sub)
+        msg.attach(MIMEText(message, 'plain'))
+
+         
+
+        # creates SMTP session 
+        s = smtplib.SMTP('smtp.gmail.com', 587) 
+
+        # start TLS for security 
+        s.starttls() 
+
+        # Authentication 
+        s.login("BITCSE.1979@gmail.com", "haqtgafzykbjfbif") 
+
+
+        # sending the mail 
+        s.sendmail("BITCSE.1979@gmail.com", altemail, msg.as_string()) 
+
+        # terminating the session 
+        s.quit() 
 
 class dateAdd(Resource):
     def get(self,email):
@@ -196,6 +237,6 @@ api.add_resource(Mgmtlv,'/hodmgt/<string:Name>')
 api.add_resource(Sub_Details,'/lvsubd/<string:lid>/<string:email>')
 
 if __name__ == '__main__':
-     app.run()
+     app.run(debug=True)
 
 
