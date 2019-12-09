@@ -221,6 +221,25 @@ class Sub_Details(Resource):
             }
             result.append(dict)
         return result
+class Alt_Agmt(Resource):
+    def get(self,email):
+        result.clear()
+        conn = e.connect()
+        query1  = conn.execute("select slno from Teaching where Teaching.email = '"+ email+"'")
+        slno = query1.cursor.fetchall()[0][0]
+        print(slno)
+        query = conn.execute("select leave_date,class,section,leave_time,subject,handled_by from alt_agmt where alt_agmt.slno ="+str(slno))
+        for i in query.cursor.fetchall():
+            dict = {
+                'leave_date':i[0],
+                'class':i[1],
+                'section':i[2],
+                'leave_time':i[3],
+                'subject':i[4],
+                'handled_by':conn.execute('select name from Teaching where slno = '+str(i[5])).fetchall()[0][0]
+            }
+            result.append(dict)
+        return result
 
 
 
@@ -235,6 +254,7 @@ api.add_resource(arrange,'/altinsert/<string:email>/<string:date1>/<string:class
 api.add_resource(dateAdd,'/dateadd/<string:email>')
 api.add_resource(Mgmtlv,'/hodmgt/<string:Name>')
 api.add_resource(Sub_Details,'/lvsubd/<string:lid>/<string:email>')
+api.add_resource(Alt_Agmt,'/alt/<string:email>')
 
 if __name__ == '__main__':
      app.run(debug=True)
