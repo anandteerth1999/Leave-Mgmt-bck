@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 # Python code to illustrate Sending mail from  
 # your Gmail account  
 import smtplib
+from datetime import date
 
 
 
@@ -17,244 +18,97 @@ app = Flask(__name__)
 api = Api(app)
 result = []
 CORS(app)
-row_id = 0
+
 
 class Faculty_details(Resource):
-    def get(self):
+    def get(self,email):
         result.clear()
         conn = e.connect()
-        query = conn.execute('select slno,Name,fid,Designation,Phno,Email,Sex from Teaching')
+        query = conn.execute('select Name,Fid,Designation from Teaching where Teaching.email =' + '\'' + email + '\'' )
         for i in query.cursor.fetchall():
-            dict = {'slno':i[0],
-                    'Name':i[1],
-                    'fid':i[2],
-                    'Designation':i[3],
-                    'Phno':i[4],
-                    'Email':i[5],
-                    'Sex':i[6]
-                    }
+            dict = {
+                'name' : i[0],
+                'fid' : i[1],
+                'designation' : i[2]
+            }
             result.append(dict)
         return result
 
-
-class HodLeave(Resource):
-    def get(self):
+class Nav_Page(Resource):
+    def get(self,email):
         result.clear()
         conn = e.connect()
-        query = conn.execute('select name from Teaching')
+        query = conn.execute('select Name from Teaching where Teaching.email =' + '\'' + email + '\'' )
         for i in query.cursor.fetchall():
-            dict = {'Name': i[0]}
+            dict = {
+                'name' : i[0]
+            }
             result.append(dict)
         return result
 
-class apply_Leave(Resource):
-    row_id = 3
-    def get(self,email,type1,from1,to,reason,caddr):
-
-        caddr = caddr.replace("*","/")
-        caddr = caddr.replace("'","\"")
+class Leave_Types(Resource):
+    def get(self,email):
+        result.clear()
         conn = e.connect()
-        query4 = conn.execute("select row_counter from counters")
-        row = query4.cursor.fetchall()[0][0]
-        cquery = conn.execute("select slno from Teaching where Teaching.email = email")
-        slno = cquery.cursor.fetchall()[0][0]
-        query3 = conn.execute("select lid from leave where leave.lid ='"+str(type1)+"'")
-        tiff = str(query3.cursor.fetchall()[0][0])
-        values = "('%d','%s','%s','%s','%s','%s','%s','%d')" %(int(slno),type1,null,from1,to,reason,caddr,int(row))
-        query1 = conn.execute("select CAST((julianday('"+to+"')-julianday('"+from1+"')) as INTEGER)")
-        diffd = query1.cursor.fetchall()[0][0]
-        query2 = conn.execute("select Remaining_leaves.remaining_days from Remaining_Leaves,Teaching where Teaching.slno = Remaining_leaves.slno and Teaching.email = email and remaining_leaves.lid='"+tiff+"'")
-        rem = query2.cursor.fetchall()[0][0]
-        #diff = int(rem) - int(diffd)
-        if(int(diffd)<=int(rem)):
-            query = conn.execute("insert into apply values"+values)
-            return True
+        gender = conn.execute('select sex from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        if gender == 'F':
+            query = conn.execute('select description,lid from LeaveTypes')
+            for i in query.cursor.fetchall():
+                dict = {
+                    'description' : i[0],
+                    'lid' : i[1]
+                }
+                result.append(dict)
+        else:
+            query = conn.execute('select description,lid from LeaveTypes where lid != \'ml\'')
+            for i in query.cursor.fetchall():
+                dict = {
+                    'description' : i[0],
+                    'lid' : i[1]
+                }
+                result.append(dict)
+        return result
+
+class Apply_Leave(Resource):
+    def post(self,email,from_date,to_date,leave_type,reason,contact):
+        row_id = 0
+        conn = e.connect()
+        fid = conn.execute('select fid from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        lid = conn.execute('select lid from LeaveTypes where description = '+'\''+leave_type+'\'').fetchall()[0][0]
+        fdate = [int(i) for i in from_date.split('-')]
+        tdate = [int(i) for i in to_date.split('-')]
+        fdate = date(fdate[0], fdate[1], fdate[2])
+        tdate = date(tdate[0], tdate[1], tdate[2])
+        max_leaves = conn.execute('select max_leaves from LeaveTypes where lid = \'' + lid+'\'').fetchall()[0][0]
+        no_of_days = (tdate - fdate).days + 1
+        applied_leaves = conn.execute('select sum(nodays) from Leaves where lid = \'' +lid+'\'' + 'and email = \'' + email + '\'').fetchall()[0][0]
+        row_id = conn.execute('select max(id) from Leaves').fetchall()[0][0]
+        if(not applied_leaves):
+            applied_leaves = 0
+        if row_id:
+            row_id += 1
+        else:
+            row_id = 1
+        values = "('%d','%s','%s','%s','%s','%s','%s','%d','%s')" %(row_id , email , fid,lid , from_date , to_date , reason , no_of_days , contact)
+        
+        if (max_leaves - applied_leaves) >= no_of_days:
+            query = conn.execute('insert into Leaves values ' + values)
+            return [True,no_of_days]
         else:
             return False
-
-
-class regs_Details(Resource):
-    def get(self,Name,Fid,Desig,Ph,email,doj,aadh,pan,dob,addr,sal,sex):
-        addr = addr.replace("*","/")
-        addr = addr.replace("'","\"")
-        conn = e.connect()
-        cquery = conn.execute("select max(slno) from Teaching")
-        slno = cquery.cursor.fetchall()[0][0]
-        slno = int(slno)+1
-        values = "('%d','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %(int(slno),Name,Fid,Desig,Ph,email,doj,pan,aadh,dob,addr,sal,sex)
-        query = conn.execute("insert into Teaching values"+values)
-
-class Leave_Details(Resource):
-    def get(self,email):
-        result.clear()
-        conn = e.connect()
-        query1 = conn.execute("select slno from Teaching where Teaching.email = email")
-        slno = query1.cursor.fetchall()[0][0]
-        query = conn.execute("select * from remaining_leaves where remaining_leaves.slno = "+str(slno))
-        for i in query.cursor.fetchall():
-            dict = {
-                'slno':i[0],
-                'lid':i[1],
-                'nod_applied':i[2],
-                'nod_remaining':i[3]
-            }
-            result.append(dict)
-        return result
-
-
-
-class Alternate(Resource):
-    def get(self,email):
-        result.clear()
-        conn = e.connect()
-        query =  conn.execute("select no_of_days from apply where row_id = (select max(row_id) from apply where slno = (select slno from Teaching where Teaching.email = email)) ")
-        a = query.cursor.fetchall()[0][0]
-        a = int(a)
-        return a
-
-class Handel(Resource):
-    def get(self):
-        result.clear()
-        conn = e.connect()
-        query = conn.execute("select Name,slno from Teaching")
-        for i in query.cursor.fetchall():
-            dict = {'Name':i[0],
-                    'slno':i[1]
-                    }
-            result.append(dict)
-        return result
-
-class arrange(Resource):
-    def get(self,email,date1,class1,section,time,sub,handel):
-        # emails = []
-        # emails.append(email)
-        conn = e.connect()
-        query1 = conn.execute("select slno,name from Teaching where Teaching.email = email")
-        row = query1.cursor.fetchall()[0]
-        slno,name = row[0],row[1]
-        values = "(%d,'%s','%s','%s','%s','%s',%d)" %(int(slno),date1,class1,section,time,sub,int(handel))
-        query = conn.execute("insert into alt_agmt values"+values)
-        query = conn.execute("select email from Teaching where Teaching.slno ="+handel)
-        altemail = query.cursor.fetchall()[0][0]
         
-        msg = MIMEMultipart()
-        msg['From'] = "BITCSE.1979@gmail.com"
-        msg['To'] = altemail
-        msg['Subject'] = "You have been assigned an Alternate Arrangement"
-        message = """You have been assigned an Alternate Arrangement
-        From:%s
-        Date:%s
-        Class:%s
-        Section:%s
-        Time:%s
-        Sub:%s""" %(name,date1,class1,section,time,sub)
-        msg.attach(MIMEText(message, 'plain'))
-
-         
-
-        # creates SMTP session 
-        s = smtplib.SMTP('smtp.gmail.com', 587) 
-
-        # start TLS for security 
-        s.starttls() 
-
-        # Authentication 
-        s.login("BITCSE.1979@gmail.com", "haqtgafzykbjfbif") 
-
-
-        # sending the mail 
-        s.sendmail("BITCSE.1979@gmail.com", altemail, msg.as_string()) 
-
-        # terminating the session 
-        s.quit() 
-
-class dateAdd(Resource):
-    def get(self,email):
-        result.clear()
-        conn = e.connect()
-        query =  conn.execute("select no_of_days from apply where row_id = (select max(row_id) from apply where slno = (select slno from Teaching where Teaching.email = email)) ")
-        a = query.cursor.fetchall()[0][0]
-        query =  conn.execute("select from_date from apply where row_id = (select max(row_id) from apply where slno = (select slno from Teaching where Teaching.email = email)) ")
-        from1 = query.cursor.fetchall()[0][0]
-        result.append(from1)
-        a = int(a)
-        b = 1
-        while(True):
-            if(b==a):
-                break
-            query1 = conn.execute("SELECT date('"+from1+"','"+str(b)+" day')")
-            inc = query1.cursor.fetchall()[0][0]
-            result.append(inc)
-            b = b+1            
-        return result
-
-class Mgmtlv(Resource):
-    def get(self,Name):
-        result.clear()
-        conn = e.connect()
-        query1 = conn.execute("select slno from Teaching where Teaching.Name = Name")
-        slno = query1.cursor.fetchall()[0][0]
-        query = conn.execute("select * from remaining_leaves where remaining_leaves.slno = "+str(slno))
-        for i in query.cursor.fetchall():
-            dict = {
-                'slno':i[0],
-                'lid':i[1],
-                'nod_applied':i[2],
-                'nod_remaining':i[3]
-            }
-            result.append(dict)
-        return result
-
-class Sub_Details(Resource):
-    def get(self,lid,email):
-        result.clear()
-        conn = e.connect()
-        query1 = conn.execute("select slno from Teaching where Teaching.email = email")
-        slno = query1.cursor.fetchall()[0][0]
-        query = conn.execute("select from_date,to_date,no_of_days,reason from apply where apply.lid = '"+str(lid)+"' and apply.slno = "+str(slno)+" order by(from_date)")
-        for i in query.cursor.fetchall():
-            dict = {
-                'from1':i[0],
-                'to1':i[1],
-                'nod':i[2],
-                'reason':i[3]
-            }
-            result.append(dict)
-        return result
-class Alt_Agmt(Resource):
-    def get(self,email):
-        result.clear()
-        conn = e.connect()
-        query1  = conn.execute("select slno from Teaching where Teaching.email = '"+ email+"'")
-        slno = query1.cursor.fetchall()[0][0]
-        print(slno)
-        query = conn.execute("select leave_date,class,section,leave_time,subject,handled_by from alt_agmt where alt_agmt.slno ="+str(slno))
-        for i in query.cursor.fetchall():
-            dict = {
-                'leave_date':i[0],
-                'class':i[1],
-                'section':i[2],
-                'leave_time':i[3],
-                'subject':i[4],
-                'handled_by':conn.execute('select name from Teaching where slno = '+str(i[5])).fetchall()[0][0]
-            }
-            result.append(dict)
-        return result
+        
 
 
 
-api.add_resource(Faculty_details,'/Faculty')
-api.add_resource(HodLeave,'/HOD_Leave')
-api.add_resource(apply_Leave,'/applied/<string:email>/<string:type1>/<string:from1>/<string:to>/<string:reason>/<string:caddr>')
-api.add_resource(regs_Details,'/regs/<string:Name>/<string:Fid>/<string:Desig>/<string:Ph>/<string:email>/<string:doj>/<string:aadh>/<string:pan>/<string:dob>/<string:addr>/<string:sal>/<string:sex>')
-api.add_resource(Leave_Details,'/leaved/<string:email>')
-api.add_resource(Alternate,'/alternate/<string:email>')
-api.add_resource(Handel,'/handle')
-api.add_resource(arrange,'/altinsert/<string:email>/<string:date1>/<string:class1>/<string:section>/<string:time>/<string:sub>/<string:handel>')
-api.add_resource(dateAdd,'/dateadd/<string:email>')
-api.add_resource(Mgmtlv,'/hodmgt/<string:Name>')
-api.add_resource(Sub_Details,'/lvsubd/<string:lid>/<string:email>')
-api.add_resource(Alt_Agmt,'/alt/<string:email>')
+
+
+
+
+api.add_resource(Faculty_details,'/api/Faculty/<string:email>')
+api.add_resource(Nav_Page,'/api/nav/<string:email>')
+api.add_resource(Leave_Types , '/api/leaveTypes/<string:email>')
+api.add_resource(Apply_Leave , '/api/apply/<string:email>/<string:from_date>/<string:to_date>/<string:leave_type>/<string:reason>/<string:contact>')
 
 if __name__ == '__main__':
      app.run(debug=True)
