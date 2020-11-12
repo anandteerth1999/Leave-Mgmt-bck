@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 # Python code to illustrate Sending mail from  
 # your Gmail account  
 import smtplib
-from datetime import date
+from datetime import date,timedelta
 
 
 
@@ -96,10 +96,43 @@ class Apply_Leave(Resource):
             return [True,no_of_days]
         else:
             return False
-        
-        
 
+class Lecturer_details(Resource):
+    def get(self,email):
+        result.clear()
+        conn = e.connect()
+        query = conn.execute('select Name from Teaching where Teaching.email !=' + '\'' + email + '\'' )
+        for i in query.cursor.fetchall():
+            dict = {
+                'name' : i[0]
+            }
+            result.append(dict)
+        return result
 
+class Alternate_Arrangement(Resource):
+    def post(self,email,date,sem,sub,time,fac):
+        conn = e.connect()
+        from_fid = conn.execute('select Fid from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        to_email = conn.execute('select email from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
+        to_fid = conn.execute('select fid from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
+        values = "('%s' , '%s' , '%d' ,'%s' , '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sub,time,from_fid,to_email,to_fid)
+        query = conn.execute('insert into alternate values ' + values)        
+
+class Check_Leaves(Resource):
+    def get(self,email):
+        result.clear()
+        conn = e.connect()
+        leaves = conn.execute('select from_date,nodays,lid,reason,contact from Leaves where Leaves.email =' + '\'' + email + '\'').fetchall()
+        for leave in leaves:
+            dict = {
+                'from_date':leave[0],
+                'nodays':leave[1],
+                'leavetype':conn.execute('select description from LeaveTypes where LeaveTypes.lid =' + '\'' + leave[2] + '\'').fetchall()[0][0],
+                'reason':leave[3],
+                'contact':leave[4]
+            }
+            result.append(dict)
+        return result
 
 
 
@@ -109,6 +142,9 @@ api.add_resource(Faculty_details,'/api/Faculty/<string:email>')
 api.add_resource(Nav_Page,'/api/nav/<string:email>')
 api.add_resource(Leave_Types , '/api/leaveTypes/<string:email>')
 api.add_resource(Apply_Leave , '/api/apply/<string:email>/<string:from_date>/<string:to_date>/<string:leave_type>/<string:reason>/<string:contact>')
+api.add_resource(Lecturer_details,'/api/Lecturers/<string:email>')
+api.add_resource(Alternate_Arrangement , '/api/alternate/<string:email>/<string:date>/<string:sem>/<string:sub>/<string:time>/<string:fac>')
+api.add_resource(Check_Leaves,'/api/check/<string:email>')
 
 if __name__ == '__main__':
      app.run(debug=True)
