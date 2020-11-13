@@ -133,6 +133,20 @@ class Check_Leaves(Resource):
             }
             result.append(dict)
         return result
+class Remaining_leaves(Resource):
+    def get(self,email):
+        result.clear()
+        conn = e.connect()
+        remaining_leaves = conn.execute('select LeaveTypes.lid, LeaveTypes.description , max_leaves, applied.email, case when max_leaves - applied.total_days is NULL then max_leaves else max_leaves - applied.total_days end as remaining from LeaveTypes left join applied on LeaveTypes.lid = applied.lid where applied.email ='+ '\'' + email + '\'UNION select LeaveTypes.lid , LeaveTypes.description , LeaveTypes.max_leaves , \'not applied\' , max_leaves as remaining from LeaveTypes where lid not in (select lid from applied where email = \''+email+'\')').fetchall()
+        for i in remaining_leaves:
+            dict = {
+                'description':i[1],
+                'max_leaves':i[2],
+                'remaining_leaves':i[4]
+
+            }
+            result.append(dict)
+        return result
 
 
 
@@ -145,6 +159,7 @@ api.add_resource(Apply_Leave , '/api/apply/<string:email>/<string:from_date>/<st
 api.add_resource(Lecturer_details,'/api/Lecturers/<string:email>')
 api.add_resource(Alternate_Arrangement , '/api/alternate/<string:email>/<string:date>/<string:sem>/<string:sub>/<string:time>/<string:fac>')
 api.add_resource(Check_Leaves,'/api/check/<string:email>')
+api.add_resource(Remaining_leaves,'/api/remaining/<string:email>')
 
 if __name__ == '__main__':
      app.run(debug=True)
