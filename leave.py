@@ -159,7 +159,7 @@ api.add_resource(Apply_Leave , '/api/apply/<string:email>/<string:from_date>/<st
 api.add_resource(Lecturer_details,'/api/Lecturers/<string:email>')
 api.add_resource(Alternate_Arrangement , '/api/alternate/<string:email>/<string:date>/<string:sem>/<string:sub>/<string:time>/<string:fac>')
 api.add_resource(Check_Leaves,'/api/check/<string:email>')
-api.add_resource(Remaining_leaves,'/api/remaining/<string:email>')
+api.add_resource(Remaining_leaves,'/api/remainingLeaves/<string:email>')
 
 if __name__ == '__main__':
      app.run(debug=True)
