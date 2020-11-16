@@ -2,14 +2,31 @@ from flask import Flask, request
 from flask_restful import Resource, Api
 from sqlalchemy import create_engine, null
 from flask_cors import CORS
+import pyrebase
 from json import dumps,dump
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 # Python code to illustrate Sending mail from  
 # your Gmail account  
 import smtplib
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import storage
 from datetime import date,timedelta
 
+config = {
+    'apiKey': "AIzaSyBXPWOPBLz87VXW5Hh_DGVSxw8Ak23pgEM",
+    'authDomain': "leave-management-840a3.firebaseapp.com",
+    'databaseURL': "https://leave-management-840a3.firebaseio.com",
+    'projectId': "leave-management-840a3",
+    'storageBucket': "leave-management-840a3.appspot.com",
+    'messagingSenderId': "116832669800",
+    'appId': "1:116832669800:web:19e5f5de80209738ffebdd",
+    'measurementId': "G-B2YEJY3CH1"
+}
+
+firebase = pyrebase.initialize_app(config)
+s = firebase.storage()
 
 
 e = create_engine('sqlite:///leave2.db')
@@ -38,10 +55,11 @@ class Nav_Page(Resource):
     def get(self,email):
         result.clear()
         conn = e.connect()
-        query = conn.execute('select Name from Teaching where Teaching.email =' + '\'' + email + '\'' )
+        query = conn.execute('select Name , Fid from Teaching where Teaching.email =' + '\'' + email + '\'' )
         for i in query.cursor.fetchall():
             dict = {
-                'name' : i[0]
+                'name' : i[0],
+                'url' : s.child(i[1] + '.jpg').get_url(None)
             }
             result.append(dict)
         return result
@@ -101,10 +119,16 @@ class Lecturer_details(Resource):
     def get(self,email):
         result.clear()
         conn = e.connect()
-        query = conn.execute('select Name from Teaching where Teaching.email !=' + '\'' + email + '\'' )
+        query = conn.execute('select Name,Fid,Designation,email,Phno from Teaching where Teaching.email !=' + '\'' + email + '\'' )
         for i in query.cursor.fetchall():
             dict = {
-                'name' : i[0]
+                'name' : i[0],
+                'fid' : i[1],
+                'designation' : i[2],
+                'url' : s.child(i[1] + '.jpg').get_url(None),
+                'email' : i[3],
+                'phone' : i[4]
+                 
             }
             result.append(dict)
         return result
