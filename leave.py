@@ -4,11 +4,7 @@ from sqlalchemy import create_engine, null
 from flask_cors import CORS
 import pyrebase
 from json import dumps,dump
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-# Python code to illustrate Sending mail from  
-# your Gmail account  
-import smtplib
+from mail  import *
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
@@ -139,8 +135,13 @@ class Alternate_Arrangement(Resource):
         from_fid = conn.execute('select Fid from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
         to_email = conn.execute('select email from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
         to_fid = conn.execute('select fid from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
+        mail()
+        return
         values = "('%s' , '%s' , '%d' ,'%s' , '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sub,time,from_fid,to_email,to_fid)
-        query = conn.execute('insert into alternate values ' + values)        
+        query = conn.execute('insert into alternate values ' + values)
+        
+
+
 
 class Check_Leaves(Resource):
     def get(self,email):
