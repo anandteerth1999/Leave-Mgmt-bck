@@ -132,13 +132,11 @@ class Lecturer_details(Resource):
 class Alternate_Arrangement(Resource):
     def post(self,email,date,sem,sec,sub,time,fac):
         conn = e.connect()
-        fid = conn.execute('select Fid,name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0]
-        from_fid = fid[0]
-        from_name = fid[1]
-        to_email = conn.execute('select email from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
-        to_fid = conn.execute('select fid from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
+        from_fid = conn.execute('select Fid from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        from_name = conn.execute('select name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        to_email = conn.execute('select email from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
+        to_fid = conn.execute('select fid from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
         mail(from_name,date,sem,sub,time,to_email,sec)
-        return
         values = "('%s' , '%s' , '%d' ,'%s' ,'%s', '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sec,sub,time,from_fid,to_email,to_fid)
         query = conn.execute('insert into alternate values ' + values)
         
