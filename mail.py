@@ -1,19 +1,18 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-def mail():
-    mail_content="Hiii"
-    """ mail_content = '''Alternate Arrangement Was made
+def mail(from_name,date1,sem,sub,time,to_email,sec):
+    mail_content = '''Alternate Arrangement Was made made to you
     On:'''+date1+'''
-    From:'''+from_mail+'''
-    Class:'''+sem+'''
-    Section:
+    From:'''+from_name+'''
+    Sem:'''+sem+'''
+    Section:'''+sec+'''
     Time:'''+time+'''
-    Thank You''' """
+    Thank You'''
     #The mail addresses and password
     sender_address = 'simple12161015@gmail.com'
     sender_pass = 'akand@1015'
-    receiver_address = 'anandmathad446@gmail.com'
+    receiver_address = to_email
     #Setup the MIME
     message = MIMEMultipart()
     message['From'] = sender_address

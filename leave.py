@@ -130,14 +130,16 @@ class Lecturer_details(Resource):
         return result
 
 class Alternate_Arrangement(Resource):
-    def post(self,email,date,sem,sub,time,fac):
+    def post(self,email,date,sem,sec,sub,time,fac):
         conn = e.connect()
-        from_fid = conn.execute('select Fid from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        fid = conn.execute('select Fid,name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0]
+        from_fid = fid[0]
+        from_name = fid[1]
         to_email = conn.execute('select email from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
         to_fid = conn.execute('select fid from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
-        mail()
+        mail(from_name,date,sem,sub,time,to_email,sec)
         return
-        values = "('%s' , '%s' , '%d' ,'%s' , '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sub,time,from_fid,to_email,to_fid)
+        values = "('%s' , '%s' , '%d' ,'%s' ,'%s', '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sec,sub,time,from_fid,to_email,to_fid)
         query = conn.execute('insert into alternate values ' + values)
         
 
@@ -177,15 +179,16 @@ class From_Alt(Resource):
     def get(self,email):
         result.clear()
         conn = e.connect()
-        from_alt = conn.execute('select Applied_date , sem,subject,Applied_time , T_email , T.Name from alternate , Teaching T where T.Fid = alternate.T_fid and F_email = ' + '\'' + email + '\'').fetchall()
+        from_alt = conn.execute('select Applied_date , sem,sec,subject,Applied_time , T_email , T.Name from alternate , Teaching T where T.Fid = alternate.T_fid and F_email = ' + '\'' + email + '\'').fetchall()
         for alt in from_alt:
             dict = {
                 'date' : alt[0],
                 'sem' : alt[1],
-                'subject' : alt[2],
-                'time' : alt[3],
-                'email' : alt[4] , 
-                'name' : alt[5] 
+                'sec':alt[2],
+                'subject' : alt[3],
+                'time' : alt[4],
+                'email' : alt[5] , 
+                'name' : alt[6] 
             }
             result.append(dict)
         return result
@@ -194,15 +197,16 @@ class To_Alt(Resource):
     def get(self,email):
         result.clear()
         conn = e.connect()
-        from_alt = conn.execute('select Applied_date , sem,subject,Applied_time , F_email  , T.name from alternate , Teaching T where T.Fid = alternate.F_fid and T_email = ' + '\'' + email + '\'').fetchall()
+        from_alt = conn.execute('select Applied_date , sem,sec,subject,Applied_time , F_email  , T.name from alternate , Teaching T where T.Fid = alternate.F_fid and T_email = ' + '\'' + email + '\'').fetchall()
         for alt in from_alt:
             dict = {
                 'date' : alt[0],
                 'sem' : alt[1],
-                'subject' : alt[2],
-                'time' : alt[3],
-                'email' : alt[4] , 
-                'name' : alt[5] 
+                'sec' : alt[2],
+                'subject' : alt[3],
+                'time' : alt[4],
+                'email' : alt[5] , 
+                'name' : alt[6] 
             }
             result.append(dict)
         return result
@@ -216,7 +220,7 @@ api.add_resource(Nav_Page,'/api/nav/<string:email>')
 api.add_resource(Leave_Types , '/api/leaveTypes/<string:email>')
 api.add_resource(Apply_Leave , '/api/apply/<string:email>/<string:from_date>/<string:to_date>/<string:leave_type>/<string:reason>/<string:contact>')
 api.add_resource(Lecturer_details,'/api/Lecturers/<string:email>')
-api.add_resource(Alternate_Arrangement , '/api/alternate/<string:email>/<string:date>/<string:sem>/<string:sub>/<string:time>/<string:fac>')
+api.add_resource(Alternate_Arrangement , '/api/alternate/<string:email>/<string:date>/<string:sem>/<string:sec>/<string:sub>/<string:time>/<string:fac>')
 api.add_resource(Check_Leaves,'/api/check/<string:email>')
 api.add_resource(Remaining_leaves,'/api/remainingLeaves/<string:email>')
 api.add_resource(From_Alt , '/api/fromAlt/<string:email>')
