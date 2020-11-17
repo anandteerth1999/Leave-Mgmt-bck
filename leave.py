@@ -172,6 +172,40 @@ class Remaining_leaves(Resource):
             result.append(dict)
         return result
 
+class From_Alt(Resource):
+    def get(self,email):
+        result.clear()
+        conn = e.connect()
+        from_alt = conn.execute('select Applied_date , sem,subject,Applied_time , T_email , T.Name from alternate , Teaching T where T.Fid = alternate.T_fid and F_email = ' + '\'' + email + '\'').fetchall()
+        for alt in from_alt:
+            dict = {
+                'date' : alt[0],
+                'sem' : alt[1],
+                'subject' : alt[2],
+                'time' : alt[3],
+                'email' : alt[4] , 
+                'name' : alt[5] 
+            }
+            result.append(dict)
+        return result
+
+class To_Alt(Resource):
+    def get(self,email):
+        result.clear()
+        conn = e.connect()
+        from_alt = conn.execute('select Applied_date , sem,subject,Applied_time , F_email  , T.name from alternate , Teaching T where T.Fid = alternate.F_fid and T_email = ' + '\'' + email + '\'').fetchall()
+        for alt in from_alt:
+            dict = {
+                'date' : alt[0],
+                'sem' : alt[1],
+                'subject' : alt[2],
+                'time' : alt[3],
+                'email' : alt[4] , 
+                'name' : alt[5] 
+            }
+            result.append(dict)
+        return result
+
 
 
 
@@ -184,6 +218,8 @@ api.add_resource(Lecturer_details,'/api/Lecturers/<string:email>')
 api.add_resource(Alternate_Arrangement , '/api/alternate/<string:email>/<string:date>/<string:sem>/<string:sub>/<string:time>/<string:fac>')
 api.add_resource(Check_Leaves,'/api/check/<string:email>')
 api.add_resource(Remaining_leaves,'/api/remainingLeaves/<string:email>')
+api.add_resource(From_Alt , '/api/fromAlt/<string:email>')
+api.add_resource(To_Alt , '/api/toAlt/<string:email>')
 
 if __name__ == '__main__':
      app.run(debug=True)
