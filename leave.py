@@ -9,6 +9,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
 from datetime import date,timedelta
+from holidays import getHolidays
 
 config = {
     'apiKey': "AIzaSyBXPWOPBLz87VXW5Hh_DGVSxw8Ak23pgEM",
@@ -93,8 +94,11 @@ class Apply_Leave(Resource):
         tdate = [int(i) for i in to_date.split('-')]
         fdate = date(fdate[0], fdate[1], fdate[2])
         tdate = date(tdate[0], tdate[1], tdate[2])
+        delta = tdate - fdate
         max_leaves = conn.execute('select max_leaves from LeaveTypes where lid = \'' + lid+'\'').fetchall()[0][0]
-        no_of_days = (tdate - fdate).days + 1
+        days_between_dates = list(map(lambda x: str(fdate+timedelta(days=x)),range(delta.days+1)))
+        available_dates = getHolidays('2020',days_between_dates)
+        no_of_days = len(available_dates)
         applied_leaves = conn.execute('select sum(nodays) from Leaves where lid = \'' +lid+'\'' + 'and email = \'' + email + '\'').fetchall()[0][0]
         row_id = conn.execute('select max(id) from Leaves').fetchall()[0][0]
         if(not applied_leaves):
@@ -107,7 +111,7 @@ class Apply_Leave(Resource):
         
         if (max_leaves - applied_leaves) >= no_of_days:
             query = conn.execute('insert into Leaves values ' + values)
-            return [True,no_of_days]
+            return [True,no_of_days,available_dates]
         else:
             return False
 
@@ -132,13 +136,11 @@ class Lecturer_details(Resource):
 class Alternate_Arrangement(Resource):
     def post(self,email,date,sem,sec,sub,time,fac):
         conn = e.connect()
-        fid = conn.execute('select Fid,name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0]
-        from_fid = fid[0]
-        from_name = fid[1]
-        to_email = conn.execute('select email from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
-        to_fid = conn.execute('select fid from Teaching where Teaching.name = ' + '\'' + fac + '\'').fetchall()[0][0]
-        mail(from_name,date,sem,sub,time,to_email,sec)
-        return
+        from_fid = conn.execute('select Fid from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        from_name = conn.execute('select name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        to_email = conn.execute('select email from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
+        to_fid = conn.execute('select fid from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
+        mail(from_name,date,sem,sec,sub,time,to_email)
         values = "('%s' , '%s' , '%d' ,'%s' ,'%s', '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sec,sub,time,from_fid,to_email,to_fid)
         query = conn.execute('insert into alternate values ' + values)
         
