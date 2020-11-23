@@ -140,7 +140,11 @@ class Alternate_Arrangement(Resource):
         from_name = conn.execute('select name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
         to_email = conn.execute('select email from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
         to_fid = conn.execute('select fid from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
+<<<<<<< HEAD
         mail(from_name,date,sem,sec,sub,time,to_email)
+=======
+        mail(from_name,date,sem,sub,time,to_email,sec)
+>>>>>>> eb16de61e855628add27ac1aadba9103c86a4fcd
         values = "('%s' , '%s' , '%d' ,'%s' ,'%s', '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sec,sub,time,from_fid,to_email,to_fid)
         query = conn.execute('insert into alternate values ' + values)
         
