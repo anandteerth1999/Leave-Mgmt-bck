@@ -107,7 +107,7 @@ class Apply_Leave(Resource):
             row_id += 1
         else:
             row_id = 1
-        values = "('%d','%s','%s','%s','%s','%s','%s','%d','%s')" %(row_id , email , fid,lid , from_date , to_date , reason , no_of_days , contact)
+        values = "('%d','%s','%s','%s','%s','%s','%s','%d','%s' , '%s')" %(row_id , email , fid,lid , from_date , to_date , reason , no_of_days , contact , '')
         
         if (max_leaves - applied_leaves) >= no_of_days:
             query = conn.execute('insert into Leaves values ' + values)
@@ -140,11 +140,7 @@ class Alternate_Arrangement(Resource):
         from_name = conn.execute('select name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
         to_email = conn.execute('select email from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
         to_fid = conn.execute('select fid from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
-<<<<<<< HEAD
-        mail(from_name,date,sem,sec,sub,time,to_email)
-=======
         mail(from_name,date,sem,sub,time,to_email,sec)
->>>>>>> eb16de61e855628add27ac1aadba9103c86a4fcd
         values = "('%s' , '%s' , '%d' ,'%s' ,'%s', '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sec,sub,time,from_fid,to_email,to_fid)
         query = conn.execute('insert into alternate values ' + values)
         
@@ -155,14 +151,15 @@ class Check_Leaves(Resource):
     def get(self,email):
         result.clear()
         conn = e.connect()
-        leaves = conn.execute('select from_date,nodays,lid,reason,contact from Leaves where Leaves.email =' + '\'' + email + '\'').fetchall()
+        leaves = conn.execute('select from_date,nodays,lid,reason,contact,approved from Leaves where Leaves.email =' + '\'' + email + '\'').fetchall()
         for leave in leaves:
             dict = {
                 'from_date':leave[0],
                 'nodays':leave[1],
                 'leavetype':conn.execute('select description from LeaveTypes where LeaveTypes.lid =' + '\'' + leave[2] + '\'').fetchall()[0][0],
                 'reason':leave[3],
-                'contact':leave[4]
+                'contact':leave[4],
+                'approved' : leave[5]
             }
             result.append(dict)
         return result
@@ -217,9 +214,32 @@ class To_Alt(Resource):
             result.append(dict)
         return result
 
+class Leaves_Today(Resource):
+    def get(self,date):
+        result.clear()
+        conn = e.connect()
+        query = conn.execute('select Teaching.Name , LeaveTypes.description , Leaves.to_date , Leaves.reason , Leaves.approved from Teaching , Leaves , LeaveTypes where Leaves.from_date = ' + '\'' + date + '\'' + ' and 	 Leaves.lid = LeaveTypes.lid and Leaves.email = Teaching.email').fetchall()
+        for i in query:
+            dict = {
+                'name' : i[0],
+                'type' : i[1],
+                'date' : i[2],
+                'reason' : i[3],
+                'approved' : i[4],
+            }
+            result.append(dict)
+        return result
 
-
-
+class Approve_Leave(Resource):
+    def post(self,name,leave_type,from_date):
+        conn = e.connect()
+        email = conn.execute('select email from Teaching where name = ' + '\'' + name + '\'').fetchall()[0][0]
+        lid = conn.execute('select lid from LeaveTypes where description = ' + '\'' + leave_type + '\'').fetchall()[0][0]
+        try:
+            conn.execute('update Leaves set approved = \'Yes\' where email = ' + '\'' + email + '\'' +  'and from_date = ' + '\'' + from_date + '\'' + 'and lid = ' + '\'' + lid + '\'')
+            return True
+        except:
+            return False
 
 api.add_resource(Faculty_details,'/api/Faculty/<string:email>')
 api.add_resource(Nav_Page,'/api/nav/<string:email>')
@@ -231,6 +251,8 @@ api.add_resource(Check_Leaves,'/api/check/<string:email>')
 api.add_resource(Remaining_leaves,'/api/remainingLeaves/<string:email>')
 api.add_resource(From_Alt , '/api/fromAlt/<string:email>')
 api.add_resource(To_Alt , '/api/toAlt/<string:email>')
+api.add_resource(Leaves_Today , '/api/today/<string:date>')
+api.add_resource(Approve_Leave , '/api/approve/<string:name>/<string:leave_type>/<string:from_date>')
 
 if __name__ == '__main__':
      app.run(debug=True)
