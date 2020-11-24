@@ -92,6 +92,7 @@ class Apply_Leave(Resource):
         row_id = 0
         conn = e.connect()
         fid = conn.execute('select fid from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
+        name = conn.execute('select name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
         lid = conn.execute('select lid from LeaveTypes where description = '+'\''+leave_type+'\'').fetchall()[0][0]
         fdate = [int(i) for i in from_date.split('-')]
         tdate = [int(i) for i in to_date.split('-')]
@@ -114,6 +115,7 @@ class Apply_Leave(Resource):
         
         if (max_leaves - applied_leaves) >= no_of_days:
             query = conn.execute('insert into Leaves values ' + values)
+            mail(email,name)
             return [True,no_of_days,available_dates]
         else:
             return False
@@ -240,6 +242,7 @@ class Approve_Leave(Resource):
         lid = conn.execute('select lid from LeaveTypes where description = ' + '\'' + leave_type + '\'').fetchall()[0][0]
         try:
             conn.execute('update Leaves set approved = \'Yes\' where email = ' + '\'' + email + '\'' +  'and from_date = ' + '\'' + from_date + '\'' + 'and lid = ' + '\'' + lid + '\'')
+            approve(name,email)
             return True
         except:
             return False

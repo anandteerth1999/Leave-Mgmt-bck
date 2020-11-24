@@ -14,8 +14,8 @@ def generatedocx(name,nodays,from_date,to_date):
         date='{:%d-%b-%Y}'.format(date.today()),
         Name=name,
         nod=nodays,
-        from_date=from_date,
-        to_date=to_date)
+        from_date=from_date[::-1],
+        to_date=to_date[::-1])
     document_1.write('Leave.docx')
     
 
