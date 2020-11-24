@@ -28,5 +28,4 @@ def getHolidays(year,dates):
     d = set(allsundays(int(year)))
     holidays = list(set(list(map(lambda x: year+'-'+dict1[x[0]]+"-"+x[1],list(map(lambda x: x.text.split(), list(map(lambda y: y.find("td",attrs={"style":"white-space:nowrap;"}),date_table_data))))))).union(d))
     holidays.sort()
-    available_dates = list(filter(lambda x: True if(x not in holidays) else False,dates))
-    return available_dates
+    return holidays

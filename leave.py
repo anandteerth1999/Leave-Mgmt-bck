@@ -8,7 +8,7 @@ from mail  import *
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
-from datetime import date,timedelta
+from datetime import date,timedelta,datetime
 from holidays import getHolidays
 
 config = {
@@ -23,7 +23,7 @@ config = {
 }
 
 firebase = pyrebase.initialize_app(config)
-s = firebase.storage()
+s = firebase.storage(str(datetime.now().year))
 
 
 e = create_engine('sqlite:///leave2.db')
@@ -32,6 +32,7 @@ app = Flask(__name__)
 api = Api(app)
 result = []
 CORS(app)
+holidays = getHolidays()
 
 
 class Faculty_details(Resource):
@@ -97,7 +98,7 @@ class Apply_Leave(Resource):
         delta = tdate - fdate
         max_leaves = conn.execute('select max_leaves from LeaveTypes where lid = \'' + lid+'\'').fetchall()[0][0]
         days_between_dates = list(map(lambda x: str(fdate+timedelta(days=x)),range(delta.days+1)))
-        available_dates = getHolidays('2020',days_between_dates)
+        available_dates = list(filter(lambda x: True if(x not in holidays) else False,days_between_dates))
         no_of_days = len(available_dates)
         applied_leaves = conn.execute('select sum(nodays) from Leaves where lid = \'' +lid+'\'' + 'and email = \'' + email + '\'').fetchall()[0][0]
         row_id = conn.execute('select max(id) from Leaves').fetchall()[0][0]
