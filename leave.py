@@ -1,10 +1,11 @@
-from flask import Flask, request
+from flask import Flask, request,send_file
 from flask_restful import Resource, Api
 from sqlalchemy import create_engine, null
 from flask_cors import CORS
 import pyrebase
 from json import dumps,dump
 from mail  import *
+from documents import *
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
@@ -23,7 +24,8 @@ config = {
 }
 
 firebase = pyrebase.initialize_app(config)
-s = firebase.storage(str(datetime.now().year))
+s = firebase.storage()
+
 
 
 e = create_engine('sqlite:///leave2.db')
@@ -32,7 +34,7 @@ app = Flask(__name__)
 api = Api(app)
 result = []
 CORS(app)
-holidays = getHolidays()
+holidays = getHolidays(str(datetime.now().year))
 
 
 class Faculty_details(Resource):
@@ -242,6 +244,15 @@ class Approve_Leave(Resource):
         except:
             return False
 
+class Download_Acknowledgment(Resource):
+    def get(self , email , nodays , from_date):
+        conn = e.connect()
+        name = conn.execute('select name from Teaching where email = ' + '\'' + email + '\'').fetchall()[0][0]
+        to_date = conn.execute('select to_date from Leaves where email = '+'\''+email+'\' and from_date= \''+from_date+'\'').fetchall()[0][0]
+        generatedocx(name , nodays , from_date , to_date)
+        return send_file('./Leave.docx' , as_attachment = True , attachment_filename = 'Leave.docx' , mimetype = 'application/msword')
+
+
 api.add_resource(Faculty_details,'/api/Faculty/<string:email>')
 api.add_resource(Nav_Page,'/api/nav/<string:email>')
 api.add_resource(Leave_Types , '/api/leaveTypes/<string:email>')
@@ -254,6 +265,7 @@ api.add_resource(From_Alt , '/api/fromAlt/<string:email>')
 api.add_resource(To_Alt , '/api/toAlt/<string:email>')
 api.add_resource(Leaves_Today , '/api/today/<string:date>')
 api.add_resource(Approve_Leave , '/api/approve/<string:name>/<string:leave_type>/<string:from_date>')
+api.add_resource(Download_Acknowledgment , '/api/download/<string:email>/<string:nodays>/<string:from_date>')
 
 if __name__ == '__main__':
      app.run(debug=True)

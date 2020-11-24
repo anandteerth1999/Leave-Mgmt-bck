@@ -15,7 +15,7 @@ def allsundays(year):
     
 
 
-def getHolidays(year,dates):
+def getHolidays(year):
     url="https://www.officeholidays.com/countries/india/karnataka/"+year
     # Make a GET request to fetch the raw HTML content
     html_content = requests.get(url).text

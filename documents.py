@@ -1,7 +1,7 @@
 from __future__ import print_function
 from mailmerge import MailMerge
 from datetime import date
-from docx2pdf import convert
+
 
 
 def generatedocx(name,nodays,from_date,to_date):
@@ -17,5 +17,5 @@ def generatedocx(name,nodays,from_date,to_date):
         from_date=from_date,
         to_date=to_date)
     document_1.write('Leave.docx')
-    convert("./Leave.docx",r"C:\Users\Anand\Desktop\Clones\hackerrank\pdf\Leave.pdf")
-generatedocx('anandteerth','2','24-11-2020','25-11-2020')
+    
+
