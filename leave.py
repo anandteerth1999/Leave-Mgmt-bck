@@ -46,7 +46,8 @@ class Faculty_details(Resource):
             dict = {
                 'name' : i[0],
                 'fid' : i[1],
-                'designation' : i[2]
+                'designation' : i[2],
+                'url' : s.child(i[1] + '.jpg').get_url(None)
             }
             result.append(dict)
         return result
