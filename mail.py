@@ -1,12 +1,13 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-def mail(from_name,date1,sem,sub,time,to_email,sec):
+def alternate(from_name,date1,sem,sub,time,to_email,sec):
     mail_content = '''Alternate Arrangement Was made to you
     On:'''+date1+'''
     From:'''+from_name+'''
     Sem:'''+sem+'''
     Section:'''+sec+'''
+    Subject: '''+sub+'''
     Time:'''+time+'''
     Thank You'''
     #The mail addresses and password

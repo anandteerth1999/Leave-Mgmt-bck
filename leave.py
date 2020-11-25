@@ -146,7 +146,7 @@ class Alternate_Arrangement(Resource):
         from_name = conn.execute('select name from Teaching where Teaching.email =' + '\'' + email + '\'').fetchall()[0][0]
         to_email = conn.execute('select email from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
         to_fid = conn.execute('select fid from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
-        mail(from_name,date,sem,sub,time,to_email,sec)
+        alternate(from_name,date,sem,sub,time,to_email,sec)
         values = "('%s' , '%s' , '%d' ,'%s' ,'%s', '%s' , '%s'  , '%s' , '%s')" %(email,date,int(sem),sec,sub,time,from_fid,to_email,to_fid)
         query = conn.execute('insert into alternate values ' + values)
         
@@ -257,6 +257,20 @@ class Download_Acknowledgment(Resource):
         return send_file('./Leave.docx' , as_attachment = True , attachment_filename = 'Leave.docx' , mimetype = 'application/msword')
 
 
+class Subjects(Resource):
+    def get(self,sem):
+        result.clear()
+        conn = e.connect()
+        query = conn.execute('select Subjectcode , Subject from Subjects where Sem = ' + sem).fetchall()
+        for i in query:
+            dict = {
+                'subjectCode' : i[0],
+                'subject' : i[1] 
+            }
+            result.append(dict)
+        return result
+
+
 api.add_resource(Faculty_details,'/api/Faculty/<string:email>')
 api.add_resource(Nav_Page,'/api/nav/<string:email>')
 api.add_resource(Leave_Types , '/api/leaveTypes/<string:email>')
@@ -270,6 +284,7 @@ api.add_resource(To_Alt , '/api/toAlt/<string:email>')
 api.add_resource(Leaves_Today , '/api/today/<string:date>')
 api.add_resource(Approve_Leave , '/api/approve/<string:name>/<string:leave_type>/<string:from_date>')
 api.add_resource(Download_Acknowledgment , '/api/download/<string:email>/<string:nodays>/<string:from_date>')
+api.add_resource(Subjects , '/api/subjects/<string:sem>')
 
 if __name__ == '__main__':
      app.run(debug=True)
