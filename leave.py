@@ -6,9 +6,6 @@ import pyrebase
 from json import dumps,dump
 from mail  import *
 from documents import *
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import storage
 from datetime import date,timedelta,datetime
 from holidays import getHolidays
 
@@ -41,28 +38,57 @@ class Faculty_details(Resource):
     def get(self,email):
         result.clear()
         conn = e.connect()
-        query = conn.execute('select Name,Fid,Designation from Teaching where Teaching.email =' + '\'' + email + '\'' )
-        for i in query.cursor.fetchall():
-            dict = {
-                'name' : i[0],
-                'fid' : i[1],
-                'designation' : i[2],
-                'url' : s.child(i[1] + '.jpg').get_url(None)
-            }
-            result.append(dict)
+        flag = Check_Teaching().get(email)
+        if flag:
+            result.clear()
+            query = conn.execute('select Name,Fid,Designation from Teaching where Teaching.email =' + '\'' + email + '\'' )
+            for i in query.cursor.fetchall():
+                dict = {
+                    'name' : i[0],
+                    'fid' : i[1],
+                    'designation' : i[2],
+                    'url' : s.child(i[1] + '.jpg').get_url(None)
+                }
+                result.append(dict)
+        else:
+            result.clear()
+            query = conn.execute(
+                'select Name,Fid,Designation from Non_Teaching where Non_Teaching.email =' + '\'' + email + '\'')
+            for i in query.cursor.fetchall():
+                dict = {
+                    'name': i[0],
+                    'fid': i[1],
+                    'designation': i[2],
+                    'url': s.child(i[1] + '.jpg').get_url(None)
+                }
+                result.append(dict)
         return result
 
 class Nav_Page(Resource):
     def get(self,email):
         result.clear()
         conn = e.connect()
-        query = conn.execute('select Name , Fid from Teaching where Teaching.email =' + '\'' + email + '\'' )
-        for i in query.cursor.fetchall():
-            dict = {
-                'name' : i[0],
-                'url' : s.child(i[1] + '.jpg').get_url(None)
-            }
-            result.append(dict)
+        flag = Check_Teaching().get(email)
+        if flag:
+            result.clear()
+            query = conn.execute('select Name , Fid from Teaching where Teaching.email =' + '\'' + email + '\'' )
+            for i in query.cursor.fetchall():
+                dict = {
+                    'name' : i[0],
+                    'url' : s.child(i[1] + '.jpg').get_url(None)
+                }
+                result.append(dict)
+        else:
+            result.clear()
+            query = conn.execute(
+                'select Name , Fid from Non_Teaching where Non_Teaching.email =' + '\'' + email + '\'')
+            for i in query.cursor.fetchall():
+                dict = {
+                    'name': i[0],
+                    'url': s.child(i[1] + '.jpg').get_url(None)
+                }
+                result.append(dict)
+            
         return result
 
 class Leave_Types(Resource):
@@ -271,6 +297,39 @@ class Subjects(Resource):
         return result
 
 
+class Check_Teaching(Resource):
+    def get(self, email):
+        result.clear()
+        conn = e.connect()
+        query = conn.execute(
+            'select \'True\' from Teaching where Teaching.email = ' + '\'' + email + '\'').fetchall()
+        for i in query:
+            dict = {
+                'flag': i[0]
+            }
+            result.append(dict)
+        return result
+
+class Non_Teaching_Faculty(Resource):
+    def get(self,email):
+        result.clear()
+        conn = e.connect()
+        query = conn.execute(
+            'select Name,Fid,Designation from Non_Teaching where Non_Teaching.email =' + '\'' + email + '\'')
+        for i in query.cursor.fetchall():
+            dict = {
+                'name': i[0],
+                'fid': i[1],
+                'designation': i[2],
+                'url': s.child(i[1] + '.jpg').get_url(None)
+            }
+            result.append(dict)
+        return result
+
+
+
+
+
 api.add_resource(Faculty_details,'/api/Faculty/<string:email>')
 api.add_resource(Nav_Page,'/api/nav/<string:email>')
 api.add_resource(Leave_Types , '/api/leaveTypes/<string:email>')
@@ -285,6 +344,8 @@ api.add_resource(Leaves_Today , '/api/today/<string:date>')
 api.add_resource(Approve_Leave , '/api/approve/<string:name>/<string:leave_type>/<string:from_date>')
 api.add_resource(Download_Acknowledgment , '/api/download/<string:email>/<string:nodays>/<string:from_date>')
 api.add_resource(Subjects , '/api/subjects/<string:sem>')
+api.add_resource(Check_Teaching , '/api/checkTeaching/<string:email>')
+api.add_resource(Non_Teaching_Faculty, '/api/NonTeaching/<string:email>')
 
 if __name__ == '__main__':
      app.run(debug=True)
