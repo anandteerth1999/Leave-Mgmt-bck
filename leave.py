@@ -1,4 +1,6 @@
-from flask import Flask, request, send_file
+from flask import Flask, send_file
+from flask.globals import request
+import json
 from flask_restful import Resource, Api
 from sqlalchemy import create_engine, null
 from flask_cors import CORS
@@ -471,6 +473,16 @@ class Register_User(Resource):
                 return True
             except:
                 return False
+
+
+class Upload_File(Resource):
+    def post(self,fid):
+        file = request.files['file']
+        file.save('test.jpg')
+        s.child(fid + '.jpg').put('test.jpg')
+        print('Upload successful')
+        print(file)
+        return "Done"
  
 
 api.add_resource(Register_User , '/api/register')
@@ -496,6 +508,7 @@ api.add_resource(Non_Teaching_Faculty, '/api/NonTeaching/<string:email>')
 api.add_resource(Check_HOD, '/api/checkHOD/<string:email>')
 api.add_resource(SignUp_User , '/api/signUp/<string:email>/<string:password>')
 api.add_resource(Check_User , '/api/getFIDs')
+api.add_resource(Upload_File , '/api/upload/<string:fid>')
 
 if __name__ == '__main__':
     app.run(debug=True)
