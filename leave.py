@@ -156,6 +156,11 @@ class Apply_Leave(Resource):
         lid=''
         max_leaves = 0
         available_dates = []
+        flag = Check_Teaching().get(email)
+        if flag:
+            leaves_table = 'Leaves'
+        else:
+            staff_type = 'Non_Teaching_Leaves'
         no_of_days = float(0)
         conn = e.connect()
         if Check_Teaching().get(email):
@@ -208,7 +213,7 @@ class Apply_Leave(Resource):
         values = "('%d','%s','%s','%s','%s','%s','%s','%f','%s' , '%s')" % (row_id , email , fid, lid , from_date , to_date , reason , no_of_days , contact , '')
 
         if (max_leaves - applied_leaves) >= no_of_days:
-            query = conn.execute('insert into Leaves values ' + values)
+            query = conn.execute('insert into ' + 'Leaves' + ' values ' + values)
             mail(email, name)
             return [True, no_of_days, available_dates]
         else:
@@ -265,7 +270,7 @@ class Alternate_Arrangement(Resource):
         to_fid = conn.execute(
             'select fid from Teaching where Teaching.Name = ' + '\'' + fac + '\'').fetchall()[0][0]
         alternate(from_name, date, sem,sub,time,to_email,sec)
-        values = "('%s' , '%s' , '%d' ,'%s' ,'%s', '%s' , '%s'  , '%s' , '%s')" % (email, date,int(sem),sec,sub,time,from_fid,to_email,to_fid)
+        values = "('%s' , '%s' , '%d' ,'%s' ,'%s', '%s' , '%s'  , '%s' , '%s' , '%s')" % (email, date,int(sem),sec,sub,time,from_fid,to_email,to_fid , '')
         query = conn.execute('insert into alternate values ' + values)
 
 
@@ -322,7 +327,7 @@ class From_Alt(Resource):
         conn = e.connect()
         if flag :
             from_alt = conn.execute(
-                'select Applied_date , sem,sec,subject,Applied_time , T_email , T.Name from alternate , Teaching T where T.Fid = alternate.T_fid and F_email = ' + '\'' + email + '\'').fetchall()
+                'select Applied_date , sem,sec,subject,Applied_time , T_email , T.Name , approved from alternate , Teaching T where T.Fid = alternate.T_fid and F_email = ' + '\'' + email + '\'').fetchall()
             for alt in from_alt:
                 dict = {
                     'date': alt[0],
@@ -331,18 +336,20 @@ class From_Alt(Resource):
                     'subject': alt[3],
                     'time': alt[4],
                     'email': alt[5] ,
-                    'name': alt[6]
+                    'name': alt[6],
+                    'approved' : alt[7]
                 }
                 result.append(dict)
         else:
             from_alt = conn.execute(
-                'select Applied_date , Applied_time , T_email , T.Name from Non_Teaching_alternate , Non_Teaching T where T.Fid = Non_Teaching_alternate.T_fid and F_email = ' + '\'' + email + '\'').fetchall()
+                'select Applied_date , Applied_time , T_email , T.Name , approved from Non_Teaching_alternate , Non_Teaching T where T.Fid = Non_Teaching_alternate.T_fid and F_email = ' + '\'' + email + '\'').fetchall()
             for alt in from_alt:
                 dict = {
                     'date': alt[0],
                     'time': alt[1],
                     'email': alt[2] ,
-                    'name': alt[3]
+                    'name': alt[3],
+                    'approved' : alt[4]
                 }
                 result.append(dict)
 
@@ -356,7 +363,7 @@ class To_Alt(Resource):
         conn = e.connect()
         if flag:
             from_alt = conn.execute(
-                'select Applied_date , sem,sec,subject,Applied_time , F_email  , T.name from alternate , Teaching T where T.Fid = alternate.F_fid and T_email = ' + '\'' + email + '\'').fetchall()
+                'select Applied_date , sem,sec,subject,Applied_time , F_email  , T.name , approved from alternate , Teaching T where T.Fid = alternate.F_fid and T_email = ' + '\'' + email + '\'').fetchall()
             for alt in from_alt:
                 dict = {
                     'date': alt[0],
@@ -365,18 +372,20 @@ class To_Alt(Resource):
                     'subject': alt[3],
                     'time': alt[4],
                     'email': alt[5] ,
-                    'name': alt[6]
+                    'name': alt[6],
+                    'approved' : alt[7]
                 }
                 result.append(dict)
         else:
             from_alt = conn.execute(
-                'select Applied_date , Applied_time , F_email , T.Name from Non_Teaching_alternate , Non_Teaching T where T.Fid = Non_Teaching_alternate.F_fid and T_email = ' + '\'' + email + '\'').fetchall()
+                'select Applied_date , Applied_time , F_email , T.Name , approved from Non_Teaching_alternate , Non_Teaching T where T.Fid = Non_Teaching_alternate.F_fid and T_email = ' + '\'' + email + '\'').fetchall()
             for alt in from_alt:
                 dict = {
                     'date': alt[0],
                     'time': alt[1],
                     'email': alt[2],
-                    'name': alt[3]
+                    'name': alt[3],
+                    'approved' : alt[4]
                 }
                 result.append(dict)
 
@@ -535,6 +544,24 @@ class Upload_File(Resource):
         print(file)
         return "Done"
 
+class Sign(Resource):
+    def post(self):
+        data = request.get_json(silent = True)
+        # print(data)
+        conn = e.connect()
+        flag = Check_Teaching().get(data.get('email'))
+        try:
+            if flag:
+                conn.execute('update alternate set approved = \'' + data.get('url') + '\'' + 'where F_email = \'' + data.get(
+                    'email') + '\'' + 'and Applied_date = \'' + data.get('date') + '\'' + 'and Applied_time = \'' + data.get('time') + '\'')
+            else:
+                conn.execute('update Non_Teaching_alternate set approved = \'' + data.get('url') + '\'' + 'where F_email = \'' + data.get(
+                    'email') + '\'' + 'and Applied_date = \'' + data.get('date') + '\'' + 'and Applied_time = \'' + data.get('time') + '\'')
+            return "done"
+        except:
+            return "error"
+
+
 class Non_Teaching_Alternate(Resource):
     def post(self,email,date,time,faculty):
         conn = e.connect()
@@ -547,9 +574,25 @@ class Non_Teaching_Alternate(Resource):
         to_fid = conn.execute(
             'select fid from Non_Teaching where Non_Teaching.Name = ' + '\'' + faculty + '\'').fetchall()[0][0]
         # alternate(from_name, date, sem, sub, time, to_email, sec)
-        values = "('%s' , '%s' , '%s' ,'%s', '%s' , '%s')" % (
-            email, date,  time, from_fid, to_email, to_fid)
+        values = "('%s' , '%s' , '%s' ,'%s', '%s' , '%s' , '%s')" % (
+            email, date,  time, from_fid, to_email, to_fid , '')
         query = conn.execute('insert into Non_Teaching_alternate values ' + values)
+
+class Download_Approval(Resource):
+    def get(self , from_email , to_name , date , time):
+        conn = e.connect()
+        flag = Check_Teaching().get(from_email)
+        if flag:
+            name = conn.execute(
+                'select name from Teaching where email = ' + '\'' + from_email + '\'').fetchall()[0][0]
+            url = conn.execute('select approved from alternate where F_email = \'' + from_email + '\' and Applied_date = \'' + date + '\' and Applied_time = \'' + time + '\'').fetchall()[0][0]
+        else:
+            name = conn.execute(
+                'select name from Non_Teaching where email = ' + '\'' + from_email + '\'').fetchall()[0][0]
+            url = conn.execute('select approved from Non_Teaching_alternate where F_email = \'' + from_email +
+                               '\' and Applied_date = \'' + date + '\' and Applied_time = \'' + time + '\'').fetchall()[0][0]
+        generate_alternate_approval(name , to_name , date , time,url)
+        return send_file('./Approval.docx', as_attachment=True, attachment_filename='Alternate_' + date + '.docx', mimetype='application/msword')
 
  
 
@@ -578,6 +621,8 @@ api.add_resource(SignUp_User , '/api/signUp/<string:email>/<string:password>')
 api.add_resource(Check_User , '/api/getFIDs')
 api.add_resource(Upload_File , '/api/upload/<string:fid>')
 api.add_resource(Non_Teaching_Alternate , '/api/nonTeachingAlternate/<string:email>/<string:date>/<string:time>/<string:faculty>')
+api.add_resource(Sign , '/api/sign')
+api.add_resource(Download_Approval , '/api/downloadAlt/<string:from_email>/<string:to_name>/<string:date>/<string:time>')
 
 if __name__ == '__main__':
     app.run(debug=True)
